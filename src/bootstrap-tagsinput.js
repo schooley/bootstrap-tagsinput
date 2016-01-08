@@ -2,10 +2,13 @@
   "use strict";
 
   var defaultOptions = {
+    tagSelector: '.tag',
     tagClass: function(item) {
-      return 'label label-info';
+      return 'tag label label-info';
     },
     focusClass: 'focus',
+    containerClass: 'bootstrap-tagsinput',
+    maxTagsClass: 'bootstrap-tagsinput-max',
     itemValue: function(item) {
       return item ? item.toString() : item;
     },
@@ -46,7 +49,7 @@
     this.placeholderText = element.hasAttribute('placeholder') ? this.$element.attr('placeholder') : '';
     this.inputSize = Math.max(1, this.placeholderText.length);
 
-    this.$container = $('<div class="bootstrap-tagsinput"></div>');
+    this.$container = $('<div>');
     this.$input = $('<input type="text" placeholder="' + this.placeholderText + '"/>').appendTo(this.$container);
 
     this.$element.before(this.$container);
@@ -113,7 +116,7 @@
       if (existing && !self.options.allowDuplicates) {
         // Invoke onTagExists
         if (self.options.onTagExists) {
-          var $existingTag = $(".tag", self.$container).filter(function() { return $(this).data("item") === existing; });
+          var $existingTag = $(self.options.tagSelector, self.$container).filter(function() { return $(this).data("item") === existing; });
           self.options.onTagExists(item, $existingTag);
         }
         return;
@@ -134,7 +137,7 @@
 
       // add a tag element
 
-      var $tag = $('<span class="tag ' + htmlEncode(tagClass) + (itemTitle !== null ? ('" title="' + itemTitle) : '') + '">' + htmlEncode(itemText) + '<span data-role="remove"></span></span>');
+      var $tag = $('<span class="' + htmlEncode(tagClass) + (itemTitle !== null ? ('" title="' + itemTitle) : '') + '">' + htmlEncode(itemText) + '<span data-role="remove"></span></span>');
       $tag.data('item', item);
       self.findInputWrapper().before($tag);
       $tag.after(' ');
@@ -158,7 +161,7 @@
 
       // Add class when reached maxTags
       if (self.options.maxTags === self.itemsArray.length || self.items().toString().length === self.options.maxInputLength)
-        self.$container.addClass('bootstrap-tagsinput-max');
+        self.$container.addClass(self.options.maxTagsClass);
 
       // If using typeahead, once the tag has been added, clear the typeahead value so it does not stick around in the input.
       if ($('.typeahead, .twitter-typeahead', self.$container).length) {
@@ -194,7 +197,7 @@
         if (beforeItemRemoveEvent.cancel)
           return;
 
-        $('.tag', self.$container).filter(function() { return $(this).data('item') === item; }).remove();
+        $(self.options.tagSelector, self.$container).filter(function() { return $(this).data('item') === item; }).remove();
         $('option', self.$element).filter(function() { return $(this).data('item') === item; }).remove();
         if($.inArray(item, self.itemsArray) !== -1)
           self.itemsArray.splice($.inArray(item, self.itemsArray), 1);
@@ -205,7 +208,7 @@
 
       // Remove class when reached maxTags
       if (self.options.maxTags > self.itemsArray.length)
-        self.$container.removeClass('bootstrap-tagsinput-max');
+        self.$container.removeClass(self.options.maxTagsClass);
 
       self.$element.trigger($.Event('itemRemoved',  { item: item, options: options }));
     },
@@ -216,7 +219,7 @@
     removeAll: function() {
       var self = this;
 
-      $('.tag', self.$container).remove();
+      $(self.options.tagSelector, self.$container).remove();
       $('option', self.$element).remove();
 
       while(self.itemsArray.length > 0)
@@ -231,7 +234,7 @@
      */
     refresh: function() {
       var self = this;
-      $('.tag', self.$container).each(function() {
+      $(self.options.tagSelector, self.$container).each(function() {
         var $tag = $(this),
             item = $tag.data('item'),
             itemValue = self.options.itemValue(item),
@@ -282,6 +285,10 @@
       // When itemValue is set, freeInput should always be false
       if (self.objectItems)
         self.options.freeInput = false;
+        
+      if (self.options.containerClass) {
+        self.$container.addClass(self.options.containerClass);
+      }
 
       makeOptionItemFunction(self.options, 'itemValue');
       makeOptionItemFunction(self.options, 'itemText');
@@ -484,7 +491,7 @@
         if (self.$element.attr('disabled')) {
           return;
         }
-        self.remove($(event.target).closest('.tag').data('item'));
+        self.remove($(event.target).closest(self.options.tagSelector).data('item'));
       }, self));
 
       // Only add existing value as tags when using strings as tags
